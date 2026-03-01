@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y nodejs npm
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY src/requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY frontend/package*.json ./frontend/
@@ -14,6 +14,6 @@ RUN cd frontend && npm run build
 
 COPY . .
 
-EXPOSE 7860
+EXPOSE 8000
 
-CMD ["sh", "-c", "cd frontend && npm start & uvicorn src.api:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "uvicorn src.api:app --host 0.0.0.0 --port 8001 & cd frontend && npm start -- -p 8000"]

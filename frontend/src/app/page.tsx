@@ -203,7 +203,7 @@ export default function QuantDashboard() {
             const wobi = (wb + wa) > 0 ? (wb - wa) / (wb + wa) : 0;
 
             try {
-                const response = await axios.post<PredictionResponse>('http://127.0.0.1:8000/predict', {
+                const response = await axios.post<PredictionResponse>('http://localhost:8001/predict', {
                     current_price: midPrice, spread: parseFloat(data.asks[0][0]) - parseFloat(data.bids[0][0]), total_vol: tv, wobi
                 });
 
