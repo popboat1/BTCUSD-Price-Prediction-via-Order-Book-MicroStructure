@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.pytest_cache/
+
+# Data (Crucial: do not commit raw CSVs)
+data/raw/*.csv
+
+# Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Environment and OS
+.env
+.DS_Store
+Thumbs.db
