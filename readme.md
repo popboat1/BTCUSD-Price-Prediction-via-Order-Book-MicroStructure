@@ -1,3 +1,13 @@
+---
+title: BTC Microstructure Predictor
+emoji: 📈
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # High-Frequency Bitcoin Price Prediction via Order Book Microstructure
 
 ## Project Overview
