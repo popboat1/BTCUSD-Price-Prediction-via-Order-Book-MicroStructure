@@ -6,7 +6,7 @@ __pycache__/
 .pytest_cache/
 
 # Data (Crucial: do not commit raw CSVs)
-data/raw/*.csv
+# data/raw/*.csv
 
 # Next.js
 frontend/node_modules/
