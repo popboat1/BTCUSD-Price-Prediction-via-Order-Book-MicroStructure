@@ -15,13 +15,8 @@ pinned: false
 ## Project Overview
 In this project, I built a linear regression model from scratch using NumPy to predict short-term Bitcoin price movements. Unlike typical trading bots that rely on lagging indicators like RSI or MACD, I designed this system to utilize high-frequency Order Book data. By analyzing the immediate supply and demand imbalance, the model forecasts price changes on a five-second horizon, providing a more "real-time" look at market sentiment.
 
-<iframe
-	src="https://popboat1-btc-usd-price-prediction-via-order-book-1233188.hf.space"
-	frameborder="0"
-	width="850"
-	height="450"
-></iframe>
-
+## Live Demo
+[View Live Dashboard](https://huggingface.co/spaces/popboat1/BTC-USD-Price-Prediction-via-Order-Book-MicroStructure)
 
 ## Technical Architecture
 The system is architected into three distinct layers to handle high-frequency data:
