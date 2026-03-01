@@ -8,12 +8,10 @@ import uvicorn
 import os
 import sys
 
-# Ensure Python can find your local modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from preprocess import load_and_preprocess
 from model import LinearRegression
 
-# 1. Dynamically locate the project root directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CSV_FILE = os.path.join(BASE_DIR, 'data', 'raw', 'btc_orderbook_10lvl.csv')
 
@@ -26,7 +24,6 @@ class OrderBookFeatures(BaseModel):
 model = None
 scaler_params = {}
 
-# 2. Modern FastAPI Lifespan Manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Loads data, scales it, and trains the model when the server boots up."""
@@ -58,13 +55,10 @@ async def lifespan(app: FastAPI):
     model.fit(X_train, y_train)
     print("Model successfully loaded and ready for predictions!\n")
     
-    # Yield control back to FastAPI to start accepting requests
     yield 
     
-    # (Anything below this line runs when the server shuts down)
     print("\n--- Shutting Down API Server ---")
 
-# 3. Initialize the App with the lifespan
 app = FastAPI(
     title="BTC Quant Model API", 
     description="Predicts future BTC prices based on order book imbalance.",

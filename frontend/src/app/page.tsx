@@ -285,7 +285,7 @@ export default function QuantDashboard() {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 flex-1 min-h-[600px]">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 flex-1 min-h-150">
                 <div className="flex flex-col p-4 shadow-xl bg-slate-900 border border-slate-800 rounded-xl relative lg:col-span-3">
                     <h2 className="text-sm font-semibold mb-4">{timeframe === 60 ? '1-Min' : `${timeframe}-Sec`} Horizon</h2>
                     <div ref={chartContainerRef} className="flex-1 w-full" />
