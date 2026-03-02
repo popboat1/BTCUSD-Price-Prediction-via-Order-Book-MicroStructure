@@ -16,6 +16,11 @@ pinned: false
 In this project, I built a linear regression model from scratch using NumPy to predict short-term Bitcoin price movements. Unlike typical trading bots that rely on lagging indicators like RSI or MACD, I designed this system to utilize high-frequency Order Book data. By analyzing the immediate supply and demand imbalance, the model forecasts price changes on a five-second horizon, providing a more "real-time" look at market sentiment.
 
 ## Live Demo
+### Important Note on Live Data Accessibility
+The real-time order book and chart visualization rely on direct WebSocket connections to the public Binance API from the client's browser. Due to regional regulatory restrictions, some Internet Service Providers (ISPs) actively block traffic to cryptocurrency exchange domains. 
+
+If the dashboard loads but the order book remains empty or the connection status fails to stabilize, your local network is likely dropping the WebSocket handshake. To resolve this and view the live microstructure engine in action, please access the dashboard using a VPN or a secure DNS routing service such as Cloudflare WARP.
+
 [View Live Dashboard](https://popboat1-btc-usd-price-prediction-via-order-book-1233188.hf.space)
 
 ## Technical Architecture

@@ -25,15 +25,17 @@ interface OrderBookState {
     asks: string[][];
 }
 
-// Interface matching the new Python WebSocket Payload
-interface ProxyPayload {
-    bids: string[][];
-    asks: string[][];
-    mid_price: number;
-    spread: number;
-    wobi: number;
+interface PredictionResponse {
+    current_price: number;
+    predicted_return_bps: number;
     predicted_future_price: number;
     signal: 'BULLISH' | 'BEARISH' | 'WAITING';
+}
+
+interface BinanceDepthUpdate {
+    lastUpdateId: number;
+    bids: string[][];
+    asks: string[][];
 }
 
 export default function QuantDashboard() {
@@ -41,7 +43,7 @@ export default function QuantDashboard() {
     const [isConnected, setIsConnected] = useState(false);
     const [timeframe, setTimeframe] = useState<number>(1);
     const [isLogScale, setIsLogScale] = useState(false);
-    const [chartType, setChartType] = useState<'candle' | 'line'>('candle');
+    const [chartType, setChartType] = useState<'candle' | 'line'>('line');
 
     const [orderBook, setOrderBook] = useState<OrderBookState>({ bids: [], asks: [] });
 
@@ -51,9 +53,8 @@ export default function QuantDashboard() {
     const mainSeriesRef = useRef<ISeriesApi<"Candlestick"> | ISeriesApi<"Line"> | null>(null);
     const predictionSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
 
+    const lastApiCallMs = useRef<number>(0);
     const lastOrderBookUpdate = useRef<number>(0);
-    
-    // The Memory Bank
     const historyRef = useRef<Tick[]>([]);
 
     useEffect(() => {
@@ -133,6 +134,7 @@ export default function QuantDashboard() {
                 (mainSeries as ISeriesApi<"Line">).setData(historicalMain as LineData[]);
             }
 
+            // Ensure predictions are also sorted and unique
             const sortedPreds = historicalPreds.sort((a, b) => (a.time as number) - (b.time as number));
             const uniquePreds = Array.from(new Map(sortedPreds.map(item => [item.time, item])).values());
             predSeries.setData(uniquePreds);
@@ -140,17 +142,12 @@ export default function QuantDashboard() {
             chart.timeScale().fitContent();
         };
 
-        // FIX 1: Only load history from Binance if the memory bank is completely empty
-        if (historyRef.current.length === 0) {
-            axios.get<string[][]>('https://api.binance.info/api/v3/klines?symbol=BTCUSDT&interval=1s&limit=1000')
-                .then(res => {
-                    res.data.forEach(d => historyRef.current.push({ time: Math.floor(Number(d[0]) / 1000), price: parseFloat(d[4]), prediction: null }));
-                    redrawFromMemory();
-                }).catch(err => console.error(err));
-        } else {
-            // FIX 2: If we already have history (user just clicked a timeframe button), instantly redraw!
-            redrawFromMemory();
-        }
+        // Preload History
+        axios.get<string[][]>('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1s&limit=1000')
+            .then(res => {
+                res.data.forEach(d => historyRef.current.push({ time: Math.floor(Number(d[0]) / 1000), price: parseFloat(d[4]), prediction: null }));
+                redrawFromMemory();
+            }).catch(err => console.error(err));
 
         const handleResize = () => {
             if (chartRef.current && chartContainerRef.current) {
@@ -159,16 +156,12 @@ export default function QuantDashboard() {
         };
         window.addEventListener('resize', handleResize);
 
-        // Connect to the Python Proxy server
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:8001/ws';
-        const ws = new WebSocket(wsUrl);
-        
+        const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@depth10@100ms');
         ws.onopen = () => setIsConnected(true);
         ws.onclose = () => setIsConnected(false);
 
-        ws.onmessage = (event: MessageEvent) => {
-            // FIX 3: Frontend is now incredibly clean. It just reads the pre-calculated Python payload.
-            const data: ProxyPayload = JSON.parse(event.data);
+        ws.onmessage = async (event: MessageEvent) => {
+            const data: BinanceDepthUpdate = JSON.parse(event.data);
             const nowMs = Date.now();
 
             if (nowMs - lastOrderBookUpdate.current > 500) {
@@ -176,7 +169,7 @@ export default function QuantDashboard() {
                 lastOrderBookUpdate.current = nowMs;
             }
 
-            const midPrice = data.mid_price;
+            const midPrice = (parseFloat(data.asks[0][0]) + parseFloat(data.bids[0][0])) / 2;
             const nowSeconds = Math.floor(nowMs / 1000);
             const candleTime = (Math.floor(nowSeconds / timeframe) * timeframe) as UTCTimestamp;
 
@@ -196,19 +189,35 @@ export default function QuantDashboard() {
                 }
             }
 
-            historyRef.current.push({ time: nowSeconds, price: midPrice, prediction: data.predicted_future_price });
+            historyRef.current.push({ time: nowSeconds, price: midPrice, prediction: null });
             if (historyRef.current.length > 5000) historyRef.current.shift();
 
-            if (predictionSeriesRef.current) {
-                predictionSeriesRef.current.update({ time: candleTime, value: data.predicted_future_price });
-            }
+            if (nowMs - lastApiCallMs.current < 1000) return;
+            lastApiCallMs.current = nowMs;
 
-            setCurrentMetrics({
-                price: midPrice,
-                spread: data.spread,
-                wobi: data.wobi,
-                signal: data.signal
-            });
+            let wb = 0; let wa = 0; let tv = 0;
+            for (let i = 0; i < 10; i++) {
+                const b = parseFloat(data.bids[i][1]); const a = parseFloat(data.asks[i][1]);
+                tv += (b + a); const w = 1.0 - (i * 0.1); wb += (b * w); wa += (a * w);
+            }
+            const wobi = (wb + wa) > 0 ? (wb - wa) / (wb + wa) : 0;
+
+            try {
+                const response = await axios.post<PredictionResponse>('/api/predict', {
+                    current_price: midPrice, spread: parseFloat(data.asks[0][0]) - parseFloat(data.bids[0][0]), total_vol: tv, wobi
+                });
+
+                if (predictionSeriesRef.current) {
+                    predictionSeriesRef.current.update({ time: candleTime, value: response.data.predicted_future_price });
+                }
+                historyRef.current[historyRef.current.length - 1].prediction = response.data.predicted_future_price;
+                setCurrentMetrics({
+                    price: midPrice,
+                    spread: parseFloat(data.asks[0][0]) - parseFloat(data.bids[0][0]),
+                    wobi,
+                    signal: response.data.signal
+                });
+            } catch (e) { console.error(e); }
         };
 
         return () => {
@@ -222,7 +231,6 @@ export default function QuantDashboard() {
     }, [timeframe, isLogScale, chartType]);
 
     const maxTotalVol = Math.max(...orderBook.bids.map(b => parseFloat(b[1])), ...orderBook.asks.map(a => parseFloat(a[1])), 0.0001);
-    
     return (
         <div className="flex flex-col min-h-screen p-4 font-sans bg-slate-950 text-slate-50 md:p-8">
             <header className="flex flex-col items-start justify-between gap-4 mb-8 md:flex-row md:items-center">
