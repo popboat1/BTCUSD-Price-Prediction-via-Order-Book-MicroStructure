@@ -3,7 +3,6 @@ import numpy as np
 from preprocess import load_and_preprocess
 from model import LinearRegression
 
-# 1. Configuration
 CSV_FILE = 'AI/Linear Regression Model From Scratch/data/raw/btc_orderbook_10lvl.csv'
 LEARNING_RATE = 0.001
 ITERATIONS = 3000
@@ -44,7 +43,6 @@ def main():
     for feature, weight in zip(features, model.weights.flatten()):
         print(f" - {feature}: {weight:.4f}")
         
-    # 7. Visualize the Convergence
     plt.figure(figsize=(10, 6))
     plt.plot(model.loss_history, color='purple', alpha=0.8, linewidth=1.5)
     plt.title("Gradient Descent Convergence on Live Binance Data")

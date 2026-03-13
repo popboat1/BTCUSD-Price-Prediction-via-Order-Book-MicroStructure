@@ -10,34 +10,23 @@ app_port: 8000
 pinned: false
 ---
 
-# High-Frequency Bitcoin Price Prediction via Order Book Microstructure
+# Linear Regression From Scratch to Predict BTC Price via Order Book Microstructure
 
 ## Project Overview
 In this project, I built a linear regression model from scratch using NumPy to predict short-term Bitcoin price movements. Unlike typical trading bots that rely on lagging indicators like RSI or MACD, I designed this system to utilize high-frequency Order Book data. By analyzing the immediate supply and demand imbalance, the model forecasts price changes on a five-second horizon, providing a more "real-time" look at market sentiment.
 
 ## Live Demo
 ### Important Note on Live Data Accessibility
-The real-time order book and chart visualization rely on direct WebSocket connections to the public Binance API from the client's browser. Due to regional regulatory restrictions, some Internet Service Providers (ISPs) actively block traffic to cryptocurrency exchange domains. 
+The real-time order book and chart visualization rely on direct WebSocket connections to the public Binance API from the client's browser. 
 
 If the dashboard loads but the order book remains empty or the connection status fails to stabilize, your local network is likely dropping the WebSocket handshake. To resolve this and view the live microstructure engine in action, please access the dashboard using a VPN or a secure DNS routing service such as Cloudflare WARP.
 
 [View Live Dashboard](https://popboat1-btc-usd-price-prediction-via-order-book-1233188.hf.space)
 
 ## Technical Architecture
-The system is architected into three distinct layers to handle high-frequency data:
-
-### 1. Predictive Engine (Python)
 - Core Model: I implemented a custom Linear Regression class from the ground up, using Mini-Batch Gradient Descent for optimization rather than relying on high-level libraries like Scikit-Learn.
 - Feature Engineering: I developed a Weighted Order Book Imbalance (WOBI) feature. This mathematically calculates the ratio of buy and sell pressure across ten levels of depth, applying a linear decay weight so that orders closest to the mid-price have the highest impact on the prediction.
 - Regularization: To handle the extreme noise of the crypto market, I integrated L2 (Ridge) regularization into the cost function, which prevents the model weights from becoming too sensitive to volatile "spoof" orders.
-
-### 2. Backend API (FastAPI)
-- I used FastAPI to create a RESTful interface that hosts the trained model in-memory.
-- The backend includes a preprocessing pipeline that standardizes live input using the specific mean and standard deviation from my training set to maintain mathematical integrity during live inference.
-
-### 3. Frontend Dashboard (Next.js & TypeScript)
-- For the UI, I used Next.js and the TradingView Lightweight Charts library to build a professional-grade dashboard.
-- I implemented a hybrid data strategy: the chart preloads historical 1-second k-lines via REST API and then seamlessly "stitches" live microstructure updates from a WebSocket for a smooth, flicker-free experience.
 
 ## Mathematics of the Model
 The engine minimizes the Mean Squared Error (MSE) augmented by an L2 penalty term:

@@ -134,7 +134,6 @@ export default function QuantDashboard() {
                 (mainSeries as ISeriesApi<"Line">).setData(historicalMain as LineData[]);
             }
 
-            // Ensure predictions are also sorted and unique
             const sortedPreds = historicalPreds.sort((a, b) => (a.time as number) - (b.time as number));
             const uniquePreds = Array.from(new Map(sortedPreds.map(item => [item.time, item])).values());
             predSeries.setData(uniquePreds);
@@ -142,7 +141,6 @@ export default function QuantDashboard() {
             chart.timeScale().fitContent();
         };
 
-        // Preload History
         axios.get<string[][]>('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1s&limit=1000')
             .then(res => {
                 res.data.forEach(d => historyRef.current.push({ time: Math.floor(Number(d[0]) / 1000), price: parseFloat(d[4]), prediction: null }));

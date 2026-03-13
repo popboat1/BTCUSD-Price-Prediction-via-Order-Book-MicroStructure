@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI):
     print("\n--- Shutting Down API Server ---")
 
 app = FastAPI(
-    title="BTC Quant Model API", 
+    title="Linear Alpha", 
     description="Predicts future BTC prices based on order book imbalance.",
     lifespan=lifespan
 )
